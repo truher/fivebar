@@ -1,22 +1,38 @@
-# kinematics of 2-DOF 5 bar planar mechanism
-#
-# following the work of:
-# "The Pantograph Mk-II: A Haptic Instrument"
-# Hayward, 2005
-#
-# NOTE: THE AUTHOR'S DERIVATING OF THE JACOBIAN MISSES TWO NEGATIVE SIGNS
-# (NOTED BELOW)
-#
-# inputs
-# ai: the length of link i
-
 import numpy as np
 
 
-def fwd_kinematics(a1, a2, a3, a4, a5, t1, t5, ax, plot_linkage):
-    """a is ... angles?  t is ... torque?  plot_linkage is a boolean"""
+def inverse(a1, a2, a3, a4, a5, x3, y3):
+    """Inverse kinematics of 2-DOF 5-bar linkage
 
-    # Forward Kimematics
+    a1-a5: link lengths, meters
+    x3,y3: position of end effector, meters
+    """
+
+    P13 = np.sqrt((x3**2) + (y3**2))
+    P53 = np.sqrt(((x3 + a5) ** 2) + (y3**2))
+
+    alphaOne = np.arccos(((a1**2) + (P13**2) - (a2**2)) / (2 * a1 * P13))
+    betaOne = np.arctan2(y3, -x3)
+    thetaOne = np.pi - alphaOne - betaOne
+
+    alphaFive = np.arctan2(y3, x3 + a5)
+    betaFive = np.arccos(((P53**2) + (a4**2) - (a3**2)) / (2 * P53 * a4))
+    thetaFive = alphaFive + betaFive
+
+    return thetaOne, thetaFive
+
+
+def forward(a1, a2, a3, a4, a5, t1, t5, ax, plot_linkage):
+    """Forward kinematics of 2-DOF 5-bar planar linkage
+
+    Following the work of: "The Pantograph Mk-II: A Haptic Instrument"
+    Hayward, 2005 (note two negative signs in the Jacobian are fixed here)
+
+    a1-a5: link lengths, meters
+    t1: ?
+    ax: matplotlib axes to plot on
+    plot_linkage (boolean): do the plotting
+    """
 
     # by definition
     x1 = 0
@@ -45,32 +61,19 @@ def fwd_kinematics(a1, a2, a3, a4, a5, t1, t5, ax, plot_linkage):
 
     P3 = np.array([[x3], [y3]])
 
-    # plot
     if plot_linkage:
-        ax.plot(-x1, -y1, marker='o')
-        ax.plot(-x2, -y2, marker='o')
-        ax.plot(-x3, -y3, marker='o')
-        ax.plot(-x4, -y4, marker='o')
-        ax.plot(-x5, -y5, marker='o')
-        ax.plot( [-x1, -x2],[-x1, -y2])
-        ax.plot( [-x2, -x3],[-y2, -y3])
-        ax.plot( [-x3, -x4],[-y3, -y4])
-        ax.plot( [-x4, -x5],[-y4, -y5])
-        ax.plot( [-x5, -x1],[-y5, -y1])
-    #    plot(
-    # -[x1 x1],-[y1 y1],'o',
-    # -[x2 x2],-[y2 y2],'o',
-    # -[x3 x3],-[y3 y3],'o',
-    # -[x4 x4],-[y4 y4],'o',
-    # -[x5 x5],-[y5 y5],'o',
-    # -[x1 x2],-[x1 y2],
-    # -[x2 x3],-[y2 y3],
-    # -[x3 x4],-[y3 y4],
-    # -[x4 x5],-[y4 y5],
-    # -[x5 x1],-[y5 y1]);
-    # end
+        ax.plot(-x1, -y1, marker="o")
+        ax.plot(-x2, -y2, marker="o")
+        ax.plot(-x3, -y3, marker="o")
+        ax.plot(-x4, -y4, marker="o")
+        ax.plot(-x5, -y5, marker="o")
+        ax.plot([-x1, -x2], [-x1, -y2])
+        ax.plot([-x2, -x3], [-y2, -y3])
+        ax.plot([-x3, -x4], [-y3, -y4])
+        ax.plot([-x4, -x5], [-y4, -y5])
+        ax.plot([-x5, -x1], [-y5, -y1])
 
-    # -------------------------------Jacobian--------------------------------
+    # Jacobian
     d = np.linalg.norm(P2 - P4)
     b = np.linalg.norm(P2 - Ph)
     h = np.linalg.norm(P3 - Ph)
