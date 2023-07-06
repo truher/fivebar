@@ -1,5 +1,7 @@
 # plots the jacobian and minimum-maximum forces over the workspace
 
+import numpy as np
+
 import fwd_kinematics
 import inv_kinematics
 
@@ -9,7 +11,7 @@ import inv_kinematics
 #set(0,'defaultfigurewindowstyle','docked')
 
 # plot the linkage at each step?
-plot_linkage = false
+plot_linkage = False
 
 # force angles
 angle_number = 20
@@ -53,10 +55,12 @@ xpoints = np.linspace(xcenter + w/2, xcenter - w/2, number)
 ypoints = np.linspace(ycenter + h/2, ycenter - h/2, number)
 
 # preallocate
-condition = np.zeros(length(xpoints),length(ypoints))
-theta     = np.zeros(2,length(xpoints))
-mean_force = np.zeros(length(xpoints),length(ypoints))
-min_force = np.zeros(length(xpoints),length(ypoints))
+condition = np.zeros([len(xpoints), len(ypoints)])
+theta     = np.zeros([2, len(xpoints)])
+mean_force = np.zeros([len(xpoints), len(ypoints)])
+min_force = np.zeros([len(xpoints), len(ypoints)])
+
+max_dir_force = np.zeros([len(xpoints), len(ypoints), angle_number])
 
 # at every point
 for i in range(len(xpoints)):
@@ -76,7 +80,7 @@ for i in range(len(xpoints)):
         Jinv = np.linalg.inv(J)
         
         # condition of jacobian
-        condition(i,j) = cond(J);
+        condition[i][j] = np.linalg.cond(J);
         
         
         #solve torque needed for 10 force directions evenly spaced
@@ -86,35 +90,34 @@ for i in range(len(xpoints)):
         
         
         # for each point
-        for k = 1:angle_number;
-            mag = 0;
-            max_force_reached = false;
+        for k in range(angle_number):
+            mag = 0
+            max_force_reached = False
             #while we have not exceeded the maximum toruqe
-            while(~max_force_reached)
+            while not max_force_reached:
                 #find the force in a particular direction
                 f(:,k) = mag*[cos(angle_range) -sin(k*angle_range); sin(k*angle_range) cos(k*angle_range)]*[1;0];
                 # compute the needed motor torque
-                torque = J'*f(:,k);
+                torque = np.transpose(J) @ f(:,k)
                 # if we have  exceeded spec (90% of max current)
-                if( abs(torque(1)) >= (Tmax)*ratio || abs(torque(2)) >= (Tmax)*ratio )
+                if( abs(torque(1)) >= (Tmax)*ratio || abs(torque(2)) >= (Tmax)*ratio ):
                     #then we have reached the max force in that direction
-                    max_force_reached = true;
-                else
+                    max_force_reached = True
+                else:
                     #otherwise increment the magnitude
-                    mag = mag+.01;
-                end
-            end
-            max_dir_force(i,j,k) = mag;
-        end
-        mean_force(i,j) = mean(max_dir_force(i,j,:));
-        min_force(i,j) = min(max_dir_force(i,j,:));
-    end
-end
+                    mag = mag + 0.01
+                
+            max_dir_force[i,j,k] = mag
+        
+        mean_force[i,j] = np.mean(max_dir_force, 2)
+        min_force[i,j] = np.min(max_dir_force, 2)
+    
+
 
 
 #FIGURE 1
 # figure set up
-xlabel('-x');ylabel('-y')
+#xlabel('-x');ylabel('-y')
 set(gcf,'color','white');
 axis equal
 axis([-.2 .35 -.45 0.03])
@@ -122,8 +125,8 @@ grid on
 hold on
 
 #plot one linkage configuration
-t1iso = .8719;
-t5iso = 2.2697;
+t1iso = 0.8719
+t5iso = 2.2697
 J = fwd_kinematics(a1,a2,a3,a4,a5,t1iso,t5iso,true);
 
 # plot the rectangle
@@ -140,15 +143,15 @@ clabel(c,handle,v)
 # figure set up
 figure
 hold on
-xlabel('-x [m]');ylabel('-y [m]')
+#xlabel('-x [m]');ylabel('-y [m]')
 set(gcf,'color','white');
 axis equal
 axis([-.2 .35 -.45 0.03])
 grid on
 
 #plot one linkage configuration
-t1iso = .8719;
-t5iso = 2.2697;
+t1iso = 0.8719
+t5iso = 2.2697
 J = fwd_kinematics(a1,a2,a3,a4,a5,t1iso,t5iso,true);
 
 # plot the rectangle
