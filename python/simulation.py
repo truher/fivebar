@@ -58,7 +58,7 @@ def side(scenario: Scenario):
 
     plot_linkage = True
 
-    fig, axs = plt.subplots(2, 3)
+    fig, axs = plt.subplots(2, 3, figsize=(12,6))
 
     theta = kinematics.inverse(scenario, max(xpoints), max(ypoints))
     t1 = theta[0]
@@ -274,7 +274,7 @@ def interior(scenario):
             mean_force[i, j] = np.mean(max_dir_force)
             min_force[i, j] = np.min(max_dir_force)
 
-    plt.figure()
+    plt.figure(figsize=(6,6))
     ax = plt.gca()
     ax.axis("equal")
     ax.set_xlim(scenario.xmin, scenario.xmax)
@@ -304,7 +304,7 @@ def interior(scenario):
 
     ax.set_title("condition")
 
-    plt.figure()
+    plt.figure(figsize=(6,6))
     ax = plt.gca()
     ax.axis("equal")
     ax.set_xlim(scenario.xmin, scenario.xmax)
@@ -337,8 +337,33 @@ def interior(scenario):
 
 
 def main():
+
+
+
     scenario = Scenario(
-        name="foo",
+        name="bigger",
+        a1=0.15,
+        a2=0.2,
+        a3=0.2,
+        a4=0.15,
+        a5=0.05,
+        x1=0,
+        y1=0,
+        ratio=1,
+        Tmax=0.38, # dual motors
+        w=0.30,
+        h=0.15,
+        xcenter=-0.025,
+        ycenter=0.2,
+        xmin=-0.2,
+        xmax=0.25,
+        ymin=-0.30,
+        ymax=0.05,
+    )
+
+
+    small_scenario = Scenario(
+        name="small",
         a1=0.065,
         a2=0.1,
         a3=0.1,
@@ -354,12 +379,15 @@ def main():
         ycenter=0.08,
         xmin=-0.1,
         xmax=0.15,
-        ymin=-0.15,
+        ymin=-0.3,
         ymax=0.05,
     )
+
+
+
     # TODO theres some wierd reversing going on here
     # original_scenario = Scenario(
-    #    name="foo",
+    #    name="original",
     #    a1=0.25,
     #    a2=0.25,
     #    a3=0.25,
