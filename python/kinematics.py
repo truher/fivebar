@@ -5,16 +5,22 @@
 
     Which is itself adapted from
     "The Pantograph Mk-II: A Haptic Instrument" Hayward, 2005
+
+    See pantograph.png for the coordinates used here.
 """
 import numpy as np
 from scenario import Scenario
 
 
 def inverse(scenario: Scenario, x3, y3):
-    """Inverse kinematics
+    """Computes inverse kinematics.
 
-    scenario: simulation geometry
-    x3,y3: position of end effector, meters
+    Args:
+        scenario: simulation geometry
+        x3,y3: position of end effector ("P3" in the diagram), meters
+
+    Returns:
+        A tuple containing theta_1 and theta_5, the angles of the proximal links.
     """
 
     P13 = np.sqrt((x3**2) + (y3**2))
@@ -35,32 +41,29 @@ def inverse(scenario: Scenario, x3, y3):
     return thetaOne, thetaFive
 
 
-def forward(scenario: Scenario, t1, t5, ax, plot_linkage):
-    """Forward kinematics
+def forward(scenario: Scenario, t1, t5):
+    """Computes forward kinematics.
 
-    scenario: geometry
-    t1: angle between a1 and a5
-    t5: angle between a4 and a5
-    ax: matplotlib axes to plot on
-    plot_linkage (boolean): do the plotting
+    Args:
+        scenario: geometry
+        t1: theta_1, the angle between a1 and a5
+        t5: theta_5, angle between a4 and a5
 
-    returns the jacobian.  todo make that a separate function
+    Returns:
+        a tuple containing the five joint positions in order, and also the length of the hypotenuse
     """
 
     # by definition
     x1 = scenario.x1
     y1 = scenario.y1
+    P1 = np.array([[x1], [y1]])
 
     x2 = scenario.a1 * np.cos(t1)
     y2 = scenario.a1 * np.sin(t1)
+    P2 = np.array([[x2], [y2]])
 
     x4 = scenario.a4 * np.cos(t5) - scenario.a5
     y4 = scenario.a4 * np.sin(t5)
-
-    x5 = -scenario.a5
-    y5 = 0
-
-    P2 = np.array([[x2], [y2]])
     P4 = np.array([[x4], [y4]])
 
     P2Ph = (scenario.a2**2 - scenario.a3**2 + np.linalg.norm(P4 - P2) ** 2) / (
@@ -74,17 +77,35 @@ def forward(scenario: Scenario, t1, t5, ax, plot_linkage):
 
     P3 = np.array([[x3], [y3]])
 
-    if plot_linkage:
-        ax.plot(-x1, -y1, marker="o")
-        ax.plot(-x2, -y2, marker="o")
-        ax.plot(-x3, -y3, marker="o")
-        ax.plot(-x4, -y4, marker="o")
-        ax.plot(-x5, -y5, marker="o")
-        ax.plot([-x1, -x2], [-x1, -y2])
-        ax.plot([-x2, -x3], [-y2, -y3])
-        ax.plot([-x3, -x4], [-y3, -y4])
-        ax.plot([-x4, -x5], [-y4, -y5])
-        ax.plot([-x5, -x1], [-y5, -y1])
+    x5 = -scenario.a5
+    y5 = 0
+    P5 = np.array([[x5], [y5]])
+
+    return P1, P2, P3, P4, P5, Ph
+
+
+def jacobian(scenario: Scenario, t1, t5, P1, P2, P3, P4, P5, Ph):
+    """Calculates the Jacobian.
+
+    Args:
+        scenario: link lengths
+        t1, t5: proximal link angles
+        P1, P2, P3, P4, P5: positions of joints
+        Ph: length of hypotenuse
+    Returns:
+        A 2x2 array representing the Jacobian.
+    """
+
+    x1 = P1[0].item()
+    y1 = P1[1].item()
+    x2 = P2[0].item()
+    y2 = P2[1].item()
+    x3 = P3[0].item()
+    y3 = P3[1].item()
+    x4 = P4[0].item()
+    y4 = P4[1].item()
+    x5 = P5[0].item()
+    y5 = P5[1].item()
 
     # Jacobian
     d = np.linalg.norm(P2 - P4)

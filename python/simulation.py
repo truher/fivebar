@@ -7,12 +7,13 @@ from scenario import Scenario
 
 def side(scenario: Scenario):
     """Simulates the device moving around the edges of the workspace.
-    Plots the device at the 4 corners.
+
+    Verifies the end-effector can reach the whole envelope
+    (inverse kinematics will fail otherwise).
+    Plots the device at the corners and midpoints.
     """
 
-    # find solve inverse kinematics at the boundary of the paper
-    number = 300
-    xpoints1 = np.linspace(scenario.xcenter, scenario.xcenter + scenario.w / 2, number)
+    number = 20
     xpoints2 = np.linspace(
         scenario.xcenter + scenario.w / 2, scenario.xcenter + scenario.w / 2, number
     )
@@ -26,9 +27,8 @@ def side(scenario: Scenario):
         scenario.xcenter - scenario.w / 2, scenario.xcenter + scenario.w / 2, number
     )
 
-    xpoints = np.concatenate((xpoints1, xpoints2, xpoints3, xpoints4, xpoints5))
+    xpoints = np.concatenate((xpoints2, xpoints3, xpoints4, xpoints5))
 
-    ypoints1 = np.linspace(scenario.ycenter, scenario.ycenter + scenario.h / 2, number)
     ypoints2 = np.linspace(
         scenario.ycenter + scenario.h / 2, scenario.ycenter - scenario.h / 2, number
     )
@@ -42,33 +42,52 @@ def side(scenario: Scenario):
         scenario.ycenter + scenario.h / 2, scenario.ycenter + scenario.h / 2, number
     )
 
-    ypoints = np.concatenate((ypoints1, ypoints2, ypoints3, ypoints4, ypoints5))
+    ypoints = np.concatenate((ypoints2, ypoints3, ypoints4, ypoints5))
 
-    theta = np.zeros([2, len(xpoints)])
+    # if you can reach the boundary, you can reach the interior
+    plt.figure(figsize=(8, 8))
+    ax = plt.gca()
     for i in range(len(xpoints)):
-        # find joint angles
         x3 = xpoints[i].item()
         y3 = ypoints[i].item()
+        plot_linkage(scenario, ax, x3, y3)
+        # kinematics.inverse(scenario, x3, y3)
 
-        theta = kinematics.inverse(scenario, x3, y3)
-        t1 = theta[0].item()
-        t5 = theta[1].item()
+    # show the key positions
+    fig, axs = plt.subplots(3, 3, figsize=(8, 8))
+    plot_linkage(scenario, axs[0, 0], min(xpoints), max(ypoints))
+    plot_linkage(scenario, axs[0, 1], scenario.xcenter, max(ypoints))
+    plot_linkage(scenario, axs[0, 2], max(xpoints), max(ypoints))
+    plot_linkage(scenario, axs[1, 0], min(xpoints), scenario.ycenter)
+    plot_linkage(scenario, axs[1, 1], scenario.xcenter, scenario.ycenter)
+    plot_linkage(scenario, axs[1, 2], max(xpoints), scenario.ycenter)
+    plot_linkage(scenario, axs[2, 0], min(xpoints), min(ypoints))
+    plot_linkage(scenario, axs[2, 1], scenario.xcenter, min(ypoints))
+    plot_linkage(scenario, axs[2, 2], max(xpoints), min(ypoints))
 
-    # plots
 
-    plot_linkage = True
+def plot_linkage(scenario, ax, x3, y3):
+    """Plots the linkage at the specified end-effector position.
 
-    fig, axs = plt.subplots(2, 3, figsize=(12,6))
-
-    theta = kinematics.inverse(scenario, max(xpoints), max(ypoints))
-    t1 = theta[0]
-    t5 = theta[1]
-    kinematics.forward(scenario, t1, t5, axs[0, 0], plot_linkage)
-    axs[0, 0].axis("equal")
-    axs[0, 0].set_xlim(scenario.xmin, scenario.xmax)
-    axs[0, 0].set_ylim(scenario.ymin, scenario.ymax)
-    axs[0, 0].grid()
-    axs[0, 0].add_patch(
+    TODO: fix the reversal here
+    """
+    t1, t5 = kinematics.inverse(scenario, x3, y3)
+    P1, P2, P3, P4, P5, Ph = kinematics.forward(scenario, t1, t5)
+    x1 = P1[0].item()
+    y1 = P1[1].item()
+    x2 = P2[0].item()
+    y2 = P2[1].item()
+    x3 = P3[0].item()
+    y3 = P3[1].item()
+    x4 = P4[0].item()
+    y4 = P4[1].item()
+    x5 = P5[0].item()
+    y5 = P5[1].item()
+    ax.axis("equal")
+    ax.set_xlim(scenario.xmin, scenario.xmax)
+    ax.set_ylim(scenario.ymin, scenario.ymax)
+    ax.grid()
+    ax.add_patch(
         Rectangle(
             (
                 -(scenario.xcenter + scenario.w / 2),
@@ -79,119 +98,20 @@ def side(scenario: Scenario):
             fill=False,
         )
     )
-    # axs[0,0].autoscale_view()
-
-    theta = kinematics.inverse(scenario, scenario.xcenter, np.min(ypoints))
-    t1 = theta[0]
-    t5 = theta[1]
-    kinematics.forward(scenario, t1, t5, axs[0, 1], plot_linkage)
-    axs[0, 1].axis("equal")
-    axs[0, 1].set_xlim(scenario.xmin, scenario.xmax)
-    axs[0, 1].set_ylim(scenario.ymin, scenario.ymax)
-    axs[0, 1].grid()
-    axs[0, 1].add_patch(
-        Rectangle(
-            (
-                -(scenario.xcenter + scenario.w / 2),
-                -(scenario.ycenter + scenario.h / 2),
-            ),
-            scenario.w,
-            scenario.h,
-            fill=False,
-        )
-    )
-    # axs[0,1].autoscale_view()
-
-    theta = kinematics.inverse(scenario, min(xpoints), max(ypoints))
-    t1 = theta[0]
-    t5 = theta[1]
-    kinematics.forward(scenario, t1, t5, axs[0, 2], plot_linkage)
-    axs[0, 2].axis("equal")
-    axs[0, 2].set_xlim(scenario.xmin, scenario.xmax)
-    axs[0, 2].set_ylim(scenario.ymin, scenario.ymax)
-    axs[0, 2].grid()
-    axs[0, 2].add_patch(
-        Rectangle(
-            (
-                -(scenario.xcenter + scenario.w / 2),
-                -(scenario.ycenter + scenario.h / 2),
-            ),
-            scenario.w,
-            scenario.h,
-            fill=False,
-        )
-    )
-    axs[0, 2].autoscale_view()
-
-    theta = kinematics.inverse(scenario, max(xpoints), min(ypoints))
-    t1 = theta[0]
-    t5 = theta[1]
-    kinematics.forward(scenario, t1, t5, axs[1, 0], plot_linkage)
-    axs[1, 0].axis("equal")
-    axs[1, 0].set_xlim(scenario.xmin, scenario.xmax)
-    axs[1, 0].set_ylim(scenario.ymin, scenario.ymax)
-    axs[1, 0].grid()
-    axs[1, 0].add_patch(
-        Rectangle(
-            (
-                -(scenario.xcenter + scenario.w / 2),
-                -(scenario.ycenter + scenario.h / 2),
-            ),
-            scenario.w,
-            scenario.h,
-            fill=False,
-        )
-    )
-    # axs[1,0].autoscale_view()
-
-    theta = kinematics.inverse(scenario, scenario.xcenter, np.max(ypoints))
-    t1 = theta[0]
-    t5 = theta[1]
-    kinematics.forward(scenario, t1, t5, axs[1, 1], plot_linkage)
-    axs[1, 1].axis("equal")
-    axs[1, 1].set_xlim(scenario.xmin, scenario.xmax)
-    axs[1, 1].set_ylim(scenario.ymin, scenario.ymax)
-    axs[1, 1].grid()
-    axs[1, 1].add_patch(
-        Rectangle(
-            (
-                -(scenario.xcenter + scenario.w / 2),
-                -(scenario.ycenter + scenario.h / 2),
-            ),
-            scenario.w,
-            scenario.h,
-            fill=False,
-        )
-    )
-    # axs[1,1].autoscale_view()
-
-    theta = kinematics.inverse(scenario, min(xpoints), min(ypoints))
-    t1 = theta[0]
-    t5 = theta[1]
-    kinematics.forward(scenario, t1, t5, axs[1, 2], plot_linkage)
-    axs[1, 2].axis("equal")
-    axs[1, 2].set_xlim(scenario.xmin, scenario.xmax)
-    axs[1, 2].set_ylim(scenario.ymin, scenario.ymax)
-    axs[1, 2].grid()
-    axs[1, 2].add_patch(
-        Rectangle(
-            (
-                -(scenario.xcenter + scenario.w / 2),
-                -(scenario.ycenter + scenario.h / 2),
-            ),
-            scenario.w,
-            scenario.h,
-            fill=False,
-        )
-    )
-    # axs[1,2].autoscale_view()
+    ax.plot(-x1, -y1, marker="o")
+    ax.plot(-x2, -y2, marker="o")
+    ax.plot(-x3, -y3, marker="o")
+    ax.plot(-x4, -y4, marker="o")
+    ax.plot(-x5, -y5, marker="o")
+    ax.plot([-x1, -x2], [-x1, -y2])
+    ax.plot([-x2, -x3], [-y2, -y3])
+    ax.plot([-x3, -x4], [-y3, -y4])
+    ax.plot([-x4, -x5], [-y4, -y5])
+    ax.plot([-x5, -x1], [-y5, -y1])
 
 
 def interior(scenario):
     """Plots the jacobian and minimum-maximum forces over the workspace."""
-
-    # plot the linkage at each step
-    plot_linkage = False
 
     # force angles
     angle_number = 20
@@ -224,7 +144,8 @@ def interior(scenario):
             t5 = theta[1].item()
 
             # jacobian
-            J = kinematics.forward(scenario, t1, t5, None, plot_linkage)
+            P1, P2, P3, P4, P5, Ph = kinematics.forward(scenario, t1, t5)
+            J = kinematics.jacobian(scenario, t1, t5, P1, P2, P3, P4, P5, Ph)
 
             Jinv = np.linalg.inv(J)
 
@@ -274,16 +195,12 @@ def interior(scenario):
             mean_force[i, j] = np.mean(max_dir_force)
             min_force[i, j] = np.min(max_dir_force)
 
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(8, 8))
     ax = plt.gca()
     ax.axis("equal")
     ax.set_xlim(scenario.xmin, scenario.xmax)
     ax.set_ylim(scenario.ymin, scenario.ymax)
     ax.grid()
-
-    # t1iso = 0.8719
-    # t5iso = 2.2697
-    # J = kinematics.forward(scenario, t1iso, t5iso, ax, False)
 
     ax.add_patch(
         Rectangle(
@@ -296,7 +213,6 @@ def interior(scenario):
             fill=False,
         )
     )
-    # ax.autoscale_view()
 
     CS = ax.contourf(-xpoints, -ypoints, np.transpose(condition), cmap="summer")
     CS = ax.contour(-xpoints, -ypoints, np.transpose(condition), colors="k")
@@ -304,17 +220,12 @@ def interior(scenario):
 
     ax.set_title("condition")
 
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(8, 8))
     ax = plt.gca()
     ax.axis("equal")
     ax.set_xlim(scenario.xmin, scenario.xmax)
     ax.set_ylim(scenario.ymin, scenario.ymax)
     ax.grid()
-
-    # plot one linkage configuration
-    # t1iso = 0.8719
-    # t5iso = 2.2697
-    # J = kinematics.forward(scenario, t1iso, t5iso, ax, False)
 
     ax.add_patch(
         Rectangle(
@@ -337,9 +248,6 @@ def interior(scenario):
 
 
 def main():
-
-
-
     scenario = Scenario(
         name="bigger",
         a1=0.15,
@@ -350,7 +258,7 @@ def main():
         x1=0,
         y1=0,
         ratio=1,
-        Tmax=0.38, # dual motors
+        Tmax=0.38,  # dual motors
         w=0.30,
         h=0.15,
         xcenter=-0.025,
@@ -360,7 +268,6 @@ def main():
         ymin=-0.30,
         ymax=0.05,
     )
-
 
     small_scenario = Scenario(
         name="small",
@@ -382,8 +289,6 @@ def main():
         ymin=-0.3,
         ymax=0.05,
     )
-
-
 
     # TODO theres some wierd reversing going on here
     # original_scenario = Scenario(
