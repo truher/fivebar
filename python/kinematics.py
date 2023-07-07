@@ -50,7 +50,8 @@ def forward(scenario: Scenario, t1, t5):
         t5: theta_5, angle between a4 and a5
 
     Returns:
-        a tuple containing the five joint positions in order, and also the length of the hypotenuse
+        a tuple containing the five joint positions in order, and also
+        the length of the hypotenuse
     """
 
     # by definition
@@ -82,6 +83,12 @@ def forward(scenario: Scenario, t1, t5):
     P5 = np.array([[x5], [y5]])
 
     return P1, P2, P3, P4, P5, Ph
+
+
+def joints(scenario: Scenario, x3, y3):
+    """Finds all the joint positions for the given end-effector position."""
+    t1, t5 = inverse(scenario, x3, y3)
+    return forward(scenario, t1, t5)
 
 
 def jacobian(scenario: Scenario, t1, t5, P1, P2, P3, P4, P5, Ph):

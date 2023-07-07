@@ -28,3 +28,15 @@ class Scenario:
     xmax: float
     ymin: float
     ymax: float
+
+    def right(self) -> float:
+        return self.xcenter + self.w / 2
+
+    def left(self) -> float:
+        return self.xcenter - self.w / 2
+
+    def top(self) -> float:
+        return self.ycenter + self.h / 2
+
+    def bottom(self) -> float:
+        return self.ycenter - self.h / 2
