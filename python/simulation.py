@@ -15,12 +15,14 @@ def reach(sc: Scenario):
 
     xpoints = np.linspace(sc.right(), sc.left(), 20)
     ypoints = np.linspace(sc.top(), sc.bottom(), 10)
-    plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
     for ix, x3 in enumerate(xpoints):
         for iy, y3 in enumerate(ypoints):
             P1, P2, P3, P4, P5, Ph = kinematics.joints(sc, x3, y3)
             plot_linkage(sc, ax, P1, P2, P3, P4, P5, 0.1)
+    ax.set_title("Reachability")
+    fig.savefig('reach')
 
 
 def examples(sc):
@@ -44,20 +46,23 @@ def examples(sc):
     plot_linkage(sc, axs[2, 1], P1, P2, P3, P4, P5)
     P1, P2, P3, P4, P5, Ph = kinematics.joints(sc, sc.right(), sc.bottom())
     plot_linkage(sc, axs[2, 2], P1, P2, P3, P4, P5)
+    axs[0,1].set_title("Examples")
+    fig.savefig('examples')
 
 
 def envelope(sc):
     t1points = np.linspace(-np.pi / 4, 5 * np.pi / 8, 20)
     t5points = np.linspace(3 * np.pi / 8, 5 * np.pi / 4, 20)
-    plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
-    ax.set_title("Full Envelope")
     for it1, t1 in enumerate(t1points):
         for it5, t5 in enumerate(t5points):
             P1, P2, P3, P4, P5, Ph = kinematics.forward(sc, t1, t5)
             if P3[1] < 0:
                 continue
             plot_linkage(sc, ax, P1, P2, P3, P4, P5, 0.1)
+    ax.set_title("Full Envelope")
+    fig.savefig('envelope')
 
 
 def interior(sc):
@@ -73,8 +78,10 @@ def interior(sc):
             J = kinematics.jacobian(sc, t1, t5, P1, P2, P3, P4, P5, Ph)
             condition[iy, ix] = np.linalg.cond(J)  # [y,x] = row major
             min_force[iy, ix] = min_max_force(sc, J)  # [y,x] = row major
-    plot_contour("Condition Number", sc, xpoints, ypoints, condition)
-    plot_contour("Min Force (N)", sc, xpoints, ypoints, min_force)
+    fig = plot_contour("Condition Number", sc, xpoints, ypoints, condition)
+    fig.savefig('condition')
+    fig = plot_contour("Min Force (N)", sc, xpoints, ypoints, min_force)
+    fig.savefig('force')
 
 
 def min_max_force(sc, J):

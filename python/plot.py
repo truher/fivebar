@@ -35,10 +35,13 @@ def plot_linkage(sc: Scenario, ax, P1, P2, P3, P4, P5, alpha=1):
 
 
 def plot_contour(name: str, sc: Scenario, xpoints, ypoints, zpoints):
-    """Plots the z data as a color map and labels the contours."""
-    plt.figure(figsize=(8, 8))
+    """Plots the z data as a color map and labels the contours.
+
+    Returns:
+        the figure, so the caller can save it
+    """
+    fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
-    ax.set_title(name)
     ax.axis("equal")
     ax.set_xlim(sc.xmin, sc.xmax)
     ax.set_ylim(sc.ymin, sc.ymax)
@@ -48,3 +51,5 @@ def plot_contour(name: str, sc: Scenario, xpoints, ypoints, zpoints):
     ax.contourf(xpoints, ypoints, smoothed, cmap="summer")
     CS = ax.contour(xpoints, ypoints, smoothed, colors="k")
     ax.clabel(CS)
+    ax.set_title(name)
+    return fig
